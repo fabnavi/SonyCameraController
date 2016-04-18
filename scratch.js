@@ -118,7 +118,15 @@ function getEvent(ver, params, arg){
   }));
 }
 
-  execute("setShootMode","movie", id, version)
+  execute("getCameraFunction",null, id, version)
+  .then((e)=>{
+    if(e.data.result[0] == "Contents Transfer"){
+      return post("setCameraFunction", "Remote Shooting")()
+              .then(post("getEvent",true,"1.1"));
+    }
+  })
+  .then(post("getEvent",true,"1.1"))
+  .then(post("setShootMode","movie"))
   //.then(getEvent("1.2",true))
   .then(post("startMovieRec"))
   //.then(getEvent("1.2",true))
@@ -133,24 +141,66 @@ function getEvent(ver, params, arg){
   })
   .then(post("getEvent",true,"1.1"))
   .then((res)=>{
-  return new Promise((resolve, reject)=>{
-  console.log(res.data.result, "\n"); 
-  resolve(res);
+      return new Promise((resolve, reject)=>{
+      console.log(res.data.result, "\n"); 
+      resolve(res);
     });
   })
   .then(post("getEvent",true,"1.1"))
   .then((res)=>{
-  return new Promise((resolve, reject)=>{
-  console.log(res.data.result, "\n"); 
-  resolve(res);
+      return new Promise((resolve, reject)=>{
+      console.log(res.data.result, "\n"); 
+      resolve(res);
     });
   })
   .then(post("getCameraFunction"))
   .then(wait(1000))
   .then(post("setCameraFunction","Contents Transfer"))
+  .then(()=>{
+    return new Promise((resolve, reject)=>{
+      loop();
+      function loop(){
+        execute("getEvent",true, id, "1.1")
+        .then((res)=>{
+            for(var i = 0; i < res.data.result.length; i++){
+              let data = res.data.result[i];
+              if(data && data['type'] == 'cameraStatus'){
+                console.log(data['cameraStatus']);
+                if( data['cameraStatus'] == "ContentsTransfer"){
+                  resolve();
+                  return null;
+                }
+              }
+            }
+            console.log("Looping...");
+            return loop();
+          });
+        }
+      })
+    })
+  .then(post("getSchemeList", null , "1.0", "avContent"))
   .then(post("getSourceList", {"scheme":"storage"}, "1.0", "avContent"))
-  .then(post("getSourceList", {"uri":"storage:memoryCard1","targget":"all","view":"date"}, "1.0", "avContent"))
-  .then(post("getContentList", {"scheme":"storage"}, "1.0", "avContent"))
+  .then(post("getContentCount", {"uri":"storage:memoryCard1","target":"all","view":"date"}, "1.2", "avContent"))
+  .then(res=>{
+    let contentCount = res.data.result[0].count;
+    return post("getContentList", {"uri":"storage:memoryCard1","stidx":0,"type":null,"cnt": contentCount, "sort":"", "view":"flat"}, "1.3", "avContent")();
+  })
+  .then(res=>{
+    let urls = [];
+    let contents = res.data.result[0]
+    for(var i = 0; i < contents.length; i++){
+      let content = contents[i];
+      if(content.contentKind == 'movie_mp4'){
+        console.log(content);
+        console.log(content.content.original);
+        urls.push({name : content.content.original[0].fileName, url: content.content.original[0].url});
+      }
+    }
+
+    console.log("url list------\n\n");
+    console.log(urls);
+  })
+  //.then(post("getContentList", {"scheme":"storage"}, "1.0", "avContent"))
   //
   /*
      execute("setShootMode","movie", id, version)
