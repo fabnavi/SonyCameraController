@@ -130,7 +130,7 @@ function getEvent(ver, params, arg){
   //.then(getEvent("1.2",true))
   .then(post("startMovieRec"))
   //.then(getEvent("1.2",true))
-  .then(wait(1000))
+  .then(wait(5000))
   .then(post("stopMovieRec"))
   .then(post("getEvent",true,"1.1"))
   .then((res)=>{
@@ -153,6 +153,20 @@ function getEvent(ver, params, arg){
       resolve(res);
     });
   })
+  .then(post("setShootMode","movie"))
+  //.then(getEvent("1.2",true))
+  .then(post("startMovieRec"))
+  //.then(getEvent("1.2",true))
+  .then(wait(5000))
+  .then(post("stopMovieRec"))
+  .then(post("getEvent",true,"1.1"))
+  .then((res)=>{
+  return new Promise((resolve, reject)=>{
+  console.log(res.data.result, "\n"); 
+  resolve(res);
+    });
+  })
+/*
   .then(post("getCameraFunction"))
   .then(wait(1000))
   .then(post("setCameraFunction","Contents Transfer"))
@@ -200,6 +214,7 @@ function getEvent(ver, params, arg){
     console.log("url list------\n\n");
     console.log(urls);
   })
+  */
   //.then(post("getContentList", {"scheme":"storage"}, "1.0", "avContent"))
   //
   /*
